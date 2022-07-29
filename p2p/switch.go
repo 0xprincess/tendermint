@@ -690,23 +690,19 @@ func (sw *Switch) acceptRoutine() {
 
 		}
 
+		if sw.peers.Has(p.ID()) { // to avoid duplicate peer
+			sw.stopAndRemovePeer(sw.peers.Get(p.ID()), nil)
+		}
+
 		if err := sw.addPeer(p); err != nil {
 			sw.Logger.Info(
-				"Inbound connection: error while adding peer, retrying...",
+				"Ignoring inbound connection: error while adding peer",
 				"err", err,
 				"id", p.ID(),
 			)
-			sw.stopAndRemovePeer(sw.peers.Get(p.ID()), nil)
-			if err := sw.addPeer(p); err != nil {
-				sw.Logger.Info(
-					"Inbound connection: failed second time!",
-					"err", err,
-					"id", p.ID(),
-				)
-				sw.transport.Cleanup(p)
-				if p.IsRunning() {
-					_ = p.Stop()
-				}
+			sw.transport.Cleanup(p)
+			if p.IsRunning() {
+				_ = p.Stop()
 			}
 		}
 	}
